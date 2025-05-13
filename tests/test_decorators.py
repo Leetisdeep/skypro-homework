@@ -82,9 +82,9 @@ def test_log_kwargs(tmpdir):
     def greet(name="World"):
         return f"Hello, {name}!"
 
-    greet(name="Alice")
+    greet(name="Check")
 
     with open(str(log_file), "r") as f:
         log_content = f.read()
         assert "greet ok" in log_content
-        assert "Result: Hello, Alice!" in log_content
+        assert "Result: Hello, Check!" in log_content
