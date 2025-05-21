@@ -1,49 +1,69 @@
 # decorators.py
-from functools import wraps
+import functools
 import logging
+import sys
+from datetime import datetime
+from typing import Callable, Optional
 
 
-def log(filename=None):
+def log(filename: Optional[str] = None) -> Callable:
     """
-    Декоратор для логирования начала и конца выполнения функции, а также ее результатов или возникших ошибок.
+    Декоратор, логирующий работу функции.
+    Если filename передан, логи записываются в файл с указанным именем.
+    Иначе — выводятся в консоль.
 
-    Args:
-        filename (str, optional): Имя файла для записи логов. Если не указано, логи выводятся в консоль.
-
-    Примеры:
-        @log(filename="mylog.txt")
-        def my_function(x, y):
-            return x + y
-
-        @log()
-        def my_function_console(x, y):
-            return x + y
+    :param filename: Имя файла для записи логов (необязательно).
+    :return: Функция-декоратор.
     """
 
-    def decorator(func):
-        @wraps(func)
+    # Создаём функцию-декоратор
+    def decorator(func: Callable) -> Callable:
+
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """
+            Обёртка, которая логирует вызов функции, её результат или возникшую ошибку.
+            """
+            # Конфигурация логгера для каждого вызова декоратора
             logger = logging.getLogger(func.__name__)
             logger.setLevel(logging.INFO)
 
+            # Если filename передан, пишем в файл; иначе — в консоль
             if filename:
-                file_handler = logging.FileHandler(filename)
-                formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-                file_handler.setFormatter(formatter)
-                logger.addHandler(file_handler)
+                handler = logging.FileHandler(filename, mode="a", encoding="utf-8")
             else:
-                stream_handler = logging.StreamHandler()
-                formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-                stream_handler.setFormatter(formatter)
-                logger.addHandler(stream_handler)
+                handler = logging.StreamHandler(sys.stdout)
+
+            # Чтобы не дублировать логи при многократных вызовах
+            logger.handlers = []
+            logger.addHandler(handler)
+
+            log_msg_start = (
+                f"[{datetime.now().isoformat()}] "
+                f"Start function '{func.__name__}' with args={args}, kwargs={kwargs}"
+            )
+            logger.info(log_msg_start)
 
             try:
                 result = func(*args, **kwargs)
-                logger.info(f"{func.__name__} ok - Result: {result}")
-                return result
+                log_msg_success = f"[{datetime.now().isoformat()}] " f"Function '{func.__name__}' returned {result!r}"
+                logger.info(log_msg_success)
             except Exception as e:
-                logger.error(f"{func.__name__} error: {type(e).__name__}. Inputs: {args}, {kwargs}")
-                raise  # Re-raise the exception to avoid masking errors
+                log_msg_error = (
+                    f"[{datetime.now().isoformat()}] "
+                    f"Error in function '{func.__name__}': {type(e).__name__}. "
+                    f"Args were {args}, kwargs were {kwargs}. "
+                    f"Exception message: {str(e)}"
+                )
+                logger.error(log_msg_error)
+                # Можно пробросить исключение дальше, чтобы не "глотать" ошибку
+                raise
+
+            # Важно закрыть handler, чтобы освободить ресурсы (особенно в случае логирования в файл)
+            handler.close()
+            logger.removeHandler(handler)
+
+            return result
 
         return wrapper
 

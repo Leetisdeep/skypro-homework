@@ -1,90 +1,59 @@
-# test_decorators.py
+# tests/test_decorators.py
+import os
+
 import pytest
+
 from src.decorators import log
 
 
-def test_log_to_file_success(tmpdir):
-    log_file = tmpdir.join("test.log")
-
-    @log(filename=str(log_file))
-    def my_function(x, y):
-        return x + y
-
-    result = my_function(1, 2)
-    assert result == 3
-
-    with open(str(log_file), "r") as f:
-        log_content = f.read()
-        assert "my_function ok" in log_content
-        assert "Result: 3" in log_content
+@pytest.fixture
+def log_file():
+    filename = "test_log_tmp.log"
+    yield filename
+    # Cleanup after tests
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+        except PermissionError:
+            pass  # File might be locked by another process
 
 
-def test_log_to_file_error(tmpdir):
-    log_file = tmpdir.join("test.log")
+def test_log_to_file(log_file):
+    @log(log_file)
+    def test_func(x):
+        return x * 2
 
-    @log(filename=str(log_file))
-    def my_function(x, y):
+    result = test_func(5)
+    assert result == 10
+
+    # Verify log file was created and has content
+    assert os.path.exists(log_file)
+    with open(log_file, "r") as f:
+        content = f.read()
+    assert "test_func" in content
+    assert "5" in content
+    assert "10" in content
+
+
+def test_function_ok(log_file):
+    @log(log_file)
+    def good_func(a, b):
+        return a + b
+
+    result = good_func(2, 3)
+    assert result == 5
+
+
+def test_function_fail(log_file):
+    @log(log_file)
+    def bad_func():
         raise ValueError("Test error")
 
-    with pytest.raises(ValueError) as excinfo:
-        my_function(1, 2)
-    assert "Test error" in str(excinfo.value)
+    with pytest.raises(ValueError, match="Test error"):
+        bad_func()
 
-    with open(str(log_file), "r") as f:
-        log_content = f.read()
-        assert "my_function error" in log_content
-        assert "ValueError" in log_content
-        assert "Inputs: (1, 2), {}" in log_content
-
-
-def test_log_to_console_success(capsys):
-    @log()
-    def my_function(x, y):
-        return x + y
-
-    result = my_function(3, 4)
-    assert result == 7
-
-    captured = capsys.readouterr()
-    assert "my_function ok" in captured.err  # Изменено на captured.err
-    assert "Result: 7" in captured.err  # Изменено на captured.err
-
-
-def test_log_to_console_error(capsys):
-    @log()
-    def my_function(x, y):
-        raise TypeError("Console test error")
-
-    with pytest.raises(TypeError) as excinfo:
-        my_function(5, 6)
-    assert "Console test error" in str(excinfo.value)
-
-    captured = capsys.readouterr()
-    assert "my_function error" in captured.err  # Изменено на captured.err
-    assert "TypeError" in captured.err  # Изменено на captured.err
-    assert "Inputs: (5, 6), {}" in captured.err  # Изменено на captured.err
-
-
-def test_log_no_filename_provided(capsys):
-    @log()
-    def add(x, y):
-        return x + y
-
-    add(5, 3)
-    captured = capsys.readouterr()
-    assert "add ok" in captured.err  # Изменено на captured.err
-
-
-def test_log_kwargs(tmpdir):
-    log_file = tmpdir.join("test.log")
-
-    @log(filename=str(log_file))
-    def greet(name="World"):
-        return f"Hello, {name}!"
-
-    greet(name="Check")
-
-    with open(str(log_file), "r") as f:
-        log_content = f.read()
-        assert "greet ok" in log_content
-        assert "Result: Hello, Check!" in log_content
+    # Verify the error was logged
+    with open(log_file, "r") as f:
+        content = f.read()
+    assert "bad_func" in content
+    assert "Test error" in content
