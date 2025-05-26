@@ -1,4 +1,3 @@
-# src/generators.py
 from collections.abc import Generator, Iterable
 from typing import Any, Dict
 
