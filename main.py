@@ -2,6 +2,7 @@ from src.generators import filter_by_currency
 from src.processing import filter_by_state, sort_by_date
 from src.utils.file_reader import read_transactions_from_csv, read_transactions_from_excel, read_transactions_from_json
 from src.utils.operation_search import operation_search
+from datetime import datetime
 import logging
 import os
 
@@ -16,10 +17,17 @@ logger.addHandler(file_handler)
 
 
 def print_transaction(transaction, json=True):
-    """Выводит информацию о транзакции."""
-    date = transaction.get("date", "Дата не указана")
+    """Выводит информацию о транзакции в нужном формате."""
+    date_str = transaction.get("date", "Дата не указана")
     description = transaction.get("description", "Описание отсутствует")
     amount = transaction.get("amount", "Сумма не указана")
+    
+    try:
+        dt = datetime.fromisoformat(date_str)
+        formatted_date = dt.strftime("%d.%m.%Y")
+    except (ValueError, TypeError):
+        formatted_date = date_str
+
     if json:
         if transaction.get("operationAmount"):
             currency = transaction.get("operationAmount").get("currency").get("code")
@@ -27,7 +35,12 @@ def print_transaction(transaction, json=True):
             currency = None
     else:
         currency = transaction.get("currency_code")
-    print(f"{date} {description}")
+    
+    print(f"{formatted_date} {description}")
+    
+    from_account = transaction.get("from", "Счет **XXXX")
+    to_account = transaction.get("to", "Счет **XXXX")
+    print(f"{from_account} -> {to_account}")
     print(f"Сумма: {amount} {currency}\n")
 
 
