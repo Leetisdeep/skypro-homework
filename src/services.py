@@ -79,6 +79,8 @@ def phone_search(transactions: List[Dict[str, Any]]) -> str:
 
 # ---------------- Поиск переводов физлицам ----------------
 
+def suggest_products():
+    pass
 
 PERSON_RE = re.compile(r"^[А-ЯЁ][а-яё]+\s[А-ЯЁ]\.?$")
 
