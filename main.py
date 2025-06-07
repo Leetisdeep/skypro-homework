@@ -1,108 +1,132 @@
-from src.generators import filter_by_currency
-from src.processing import filter_by_state, sort_by_date
-from src.utils.file_reader import read_transactions_from_csv, read_transactions_from_excel, read_transactions_from_json
-from src.utils.operation_search import operation_search
-from datetime import datetime
-import logging
-import os
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-log_dir = "..\\logs"
-log_file_path = os.path.join(log_dir, "utils.log")
-file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
-file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-
-
-def print_transaction(transaction, json=True):
-    """Выводит информацию о транзакции в нужном формате."""
-    date_str = transaction.get("date", "Дата не указана")
-    description = transaction.get("description", "Описание отсутствует")
-    amount = transaction.get("amount", "Сумма не указана")
-    
-    try:
-        dt = datetime.fromisoformat(date_str)
-        formatted_date = dt.strftime("%d.%m.%Y")
-    except (ValueError, TypeError):
-        formatted_date = date_str
-
-    if json:
-        if transaction.get("operationAmount"):
-            currency = transaction.get("operationAmount").get("currency").get("code")
-        else:
-            currency = None
-    else:
-        currency = transaction.get("currency_code")
-    
-    print(f"{formatted_date} {description}")
-    
-    from_account = transaction.get("from", "Счет **XXXX")
-    to_account = transaction.get("to", "Счет **XXXX")
-    print(f"{from_account} -> {to_account}")
-    print(f"Сумма: {amount} {currency}\n")
-
-
-def main():
-    print("Привет! Добро пожаловать в программу работы с банковскими транзакциями.")
-    print("Выберите необходимый пункт меню:")
-    print("1. Получить информацию о транзакциях из JSON-файла")
-    print("2. Получить информацию о транзакциях из CSV-файла")
-    print("3. Получить информацию о транзакциях из XLSX-файла")
-
-    choice = input("Введите номер пункта: ")
-    if choice not in ["1", "2", "3"]:
-        print("Некорректный выбор. Попробуйте снова.")
-        return
-
-    if choice == "1":
-        transactions = read_transactions_from_json("data/operations.json")
-    elif choice == "2":
-        transactions = read_transactions_from_csv("data/transactions.csv")
-    else:
-        transactions = read_transactions_from_excel("data/transactions_excel.xlsx")
-
-    if not transactions:
-        print("Не удалось загрузить данные.")
-        return
-
-    status = input("Введите статус (EXECUTED, CANCELED, PENDING): ").upper()
-    while status not in ["EXECUTED", "CANCELED", "PENDING"]:
-        print("Статус операции недоступен.")
-        status = input("Введите статус (EXECUTED, CANCELED, PENDING): ").upper()
-
-    filtered_transactions = filter_by_state(transactions, status)
-
-    sort_answer = input("Отсортировать операции по дате? Да/Нет: ").lower() == "да"
-    if sort_answer:
-        order = input("По возрастанию или по убыванию? Введите 'возрастание' или 'убывание': ").lower()
-        reverse = order == "убывание"
-        filtered_transactions = sort_by_date(filtered_transactions, reverse)
-
-    rub_only = input("Выводить только рублевые транзакции? Да/Нет: ").lower() == "да"
-    if rub_only:
-        if choice == "1":
-            filtered_transactions = list(filter_by_currency(filtered_transactions, "RUB"))
-        else:
-            filtered_transactions = list(filter_by_currency(filtered_transactions, "RUB", False))
-
-    filter_description = input("Отфильтровать по описанию? Да/Нет: ").lower() == "да"
-    if filter_description:
-        search_string = input("Введите строку для поиска: ")
-        filtered_transactions = operation_search(filtered_transactions, search_string)
-
-    print("\nРаспечатываю итоговый список транзакций...")
-    if not filtered_transactions:
-        print("Не найдено ни одной транзакции, подходящей под ваши условия фильтрации.")
-    else:
-        print(f"Всего банковских операций в выборке: {len(filtered_transactions)}")
-        for transaction in filtered_transactions:
-            if choice == "1":
-                print_transaction(transaction)
-            else:
-                print_transaction(transaction, False)
-
+from src.Category import Category
+from src.Product import Product
+from src.Product import Smartphone
+from src.Product import LawnGrass
 
 if __name__ == "__main__":
-    main()
+    product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
+    product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
+    product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
+
+    print(product1.name)
+    print(product1.description)
+    print(product1.price)
+    print(product1.quantity)
+
+    print(product2.name)
+    print(product2.description)
+    print(product2.price)
+    print(product2.quantity)
+
+    print(product3.name)
+    print(product3.description)
+    print(product3.price)
+    print(product3.quantity)
+
+    category1 = Category(
+        "Смартфоны",
+        "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций для удобства жизни",
+        [product1, product2, product3],
+    )
+
+    print(category1.name == "Смартфоны")
+    print(category1.description)
+    print(len(category1.products))
+    print(category1.all_category)
+    print(category1.all_product)
+
+    product4 = Product('55" QLED 4K', "Фоновая подсветка", 123000.0, 7)
+    category2 = Category(
+        "Телевизоры",
+        "Современный телевизор, который позволяет наслаждаться просмотром, станет вашим другом и помощником",
+        [product4],
+    )
+
+    print(category2.name)
+    print(category2.description)
+    print(len(category2.products))
+    print(category2.products)
+
+    print(Category.all_category)
+    print(Category.all_product)
+
+if __name__ == '__main__':
+    smartphone1 = Smartphone("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5, 95.5,
+                         "S23 Ultra", 256, "Серый")
+    smartphone2 = Smartphone("Iphone 15", "512GB, Gray space", 210000.0, 8, 98.2, "15", 512, "Gray space")
+    smartphone3 = Smartphone("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14, 90.3, "Note 11", 1024, "Синий")
+
+    print(smartphone1.name)
+    print(smartphone1.description)
+    print(smartphone1.price)
+    print(smartphone1.quantity)
+    print(smartphone1.efficiency)
+    print(smartphone1.model)
+    print(smartphone1.memory)
+    print(smartphone1.color)
+
+    print(smartphone2.name)
+    print(smartphone2.description)
+    print(smartphone2.price)
+    print(smartphone2.quantity)
+    print(smartphone2.efficiency)
+    print(smartphone2.model)
+    print(smartphone2.memory)
+    print(smartphone2.color)
+
+    print(smartphone3.name)
+    print(smartphone3.description)
+    print(smartphone3.price)
+    print(smartphone3.quantity)
+    print(smartphone3.efficiency)
+    print(smartphone3.model)
+    print(smartphone3.memory)
+    print(smartphone3.color)
+
+    grass1 = LawnGrass("Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый")
+    grass2 = LawnGrass("Газонная трава 2", "Выносливая трава", 450.0, 15, "США", "5 дней", "Темно-зеленый")
+
+    print(grass1.name)
+    print(grass1.description)
+    print(grass1.price)
+    print(grass1.quantity)
+    print(grass1.country)
+    print(grass1.germination_period)
+    print(grass1.color)
+
+    print(grass2.name)
+    print(grass2.description)
+    print(grass2.price)
+    print(grass2.quantity)
+    print(grass2.country)
+    print(grass2.germination_period)
+    print(grass2.color)
+
+    smartphone_sum = smartphone1 + smartphone2
+    print(smartphone_sum)
+
+    grass_sum = grass1 + grass2
+    print(grass_sum)
+
+    try:
+        invalid_sum = smartphone1 + grass1
+    except TypeError:
+        print("Возникла ошибка TypeError при попытке сложения")
+    else:
+        print("Не возникла ошибка TypeError при попытке сложения")
+
+    category_smartphones = Category("Смартфоны", "Высокотехнологичные смартфоны", [smartphone1, smartphone2])
+    category_grass = Category("Газонная трава", "Различные виды газонной травы", [grass1, grass2])
+
+    category_smartphones.add_product(smartphone3)
+
+    print(category_smartphones.products)
+
+    print(Category.product_count)
+
+    try:
+        category_smartphones.add_product("Not a product")
+    except TypeError:
+        print("Возникла ошибка TypeError при добавлении не продукта")
+    else:
+        print("Не возникла ошибка TypeError при добавлении не продукта")
