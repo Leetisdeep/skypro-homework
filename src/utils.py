@@ -8,6 +8,11 @@ from datetime import datetime, time
 from pathlib import Path
 from typing import Any, Dict, List
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import pandas as pd
 
 from .logger import logger
@@ -151,3 +156,4 @@ def get_stock_prices(stocks: List[str]) -> List[Dict[str, Any]]:
 
 def format_money(amount: float, currency: str = "USD") -> str:
     return f"{amount:,.2f} {currency}"
+
