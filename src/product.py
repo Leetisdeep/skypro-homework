@@ -1,126 +1,98 @@
-from abc import ABC, abstractmethod
+import pytest
+
+from src.category import Category
+from src.product import Product
 
 
-class ReprLoggingMixin:
-    """
-    Миксин для логирования создания объектов и представления
-    Реализует магический метод __repr__ и расширяет __init__
-    """
-
-    def __init__(self, *args, **kwargs):
-        """
-        Расширяет конструктор базового класса логированием параметров создания
-        """
-        print(f"Создание объекта {self.__class__.__name__} "
-              f"с параметрами: {args} {kwargs}")
-        super().__init__(*args, **kwargs)
-
-    def __repr__(self) -> str:
-        args_str = ', '.join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"<{self.__class__.__name__}({args_str})>"
+@pytest.fixture
+def category() -> "Category":
+    # Сбросим счетчики перед каждым тестом
+    Category.all_category = 0
+    Category.all_product = 0
+    product1 = Product("Samsung Galaxy S23 Ultra",
+                       "256GB, Серый цвет, 200MP камера",
+                       180000.0, 5)
+    product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
+    product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
+    return Category("Смартфоны", "Смартфоны", [product1, product2, product3])
 
 
-class BaseProduct(ABC):
-    """Абстрактный базовый класс для продуктов"""
-
-    @abstractmethod
-    def __init__(self, name: str, description: str,
-                 price: float, quantity: int):
-        self.name = name
-        self.description = description
-        self._price = price
-        self.quantity = quantity
-        super().__init__()  # Добавлен вызов super().__init__()
-
-    @abstractmethod
-    def __str__(self):
-        pass
-
-    @property
-    @abstractmethod
-    def price(self):
-        pass
-
-    @price.setter
-    @abstractmethod
-    def price(self, new_price):
-        pass
-
-    @abstractmethod
-    def __add__(self, other):
-        pass
+def test_init(category: Category) -> None:
+    assert category.name == "Смартфоны"
+    assert category.description == "Смартфоны"
+    assert len(category.products) == 3
 
 
-class Product(BaseProduct, ReprLoggingMixin):
-    """Класс продукта с наследованием от BaseProduct и миксина"""
-
-    def __init__(self, name: str, description: str,
-                 price: float, quantity: int):
-        if quantity == 0:
-            raise ValueError("Товар с нулевым количеством не может "
-                             "быть добавлен")
-
-        super().__init__(
-            name=name,
-            description=description,
-            price=price,
-            quantity=quantity
-        )
-
-    def __str__(self) -> str:
-        return (f"{self.name}, {self._price} руб. "
-                f"Остаток: {self.quantity} шт.")
-
-    @property
-    def price(self) -> float:
-        return self._price
-
-    @price.setter
-    def price(self, value: float) -> None:
-        if value <= 0:
-            raise ValueError("Цена не должна быть нулевая или "
-                             "отрицательная")
-        self._price = value
-
-    def __add__(self, other) -> float:
-        if not isinstance(other, BaseProduct):
-            raise TypeError(
-                "Можно складывать только объекты класса "
-                "Product или его наследников"
-            )
-        return self._price * self.quantity + other._price * other.quantity
-
-    @classmethod
-    def new_product(cls, dictionary: dict) -> "Product":
-        return cls(**dictionary)
+def test_products(category: Category) -> None:
+    expected_output = (
+        "Samsung Galaxy S23 Ultra, 180000.0 руб. Остаток: 5 шт. "
+        "Iphone 15, 210000.0 руб. Остаток: 8 шт. "
+        "Xiaomi Redmi Note 11, 31000.0 руб. Остаток: 14 шт. "
+    )
+    assert category.products_str == expected_output
 
 
-class Smartphone(Product):
-    def __init__(self, name: str, description: str, price: float,
-                 quantity: int, efficiency: float, model: str,
-                 memory: int, color: str):
-        super().__init__(
-            name=name,
-            description=description,
-            price=price,
-            quantity=quantity
-        )
-        self.efficiency = efficiency
-        self.model = model
-        self.memory = memory
-        self.color = color
+def test_add_product(category: Category) -> None:
+    initial_product_count = Category.all_product
+    category.add_product(
+        Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
+    )
+    assert Category.all_product == initial_product_count + 1
 
 
-class LawnGrass(Product):
-    def __init__(self, name: str, description: str, price: float,
-                 quantity: int, country: str, germination_period: str,
-                 color: str):
-        super().__init__(
-            name=name,
-            description=description,
-            price=price,
-            quantity=quantity
-        )
-        self.country = country
-        self.germination_period = germination_period
-        self.color = color
+def test_category_str():
+    # Сбросим счетчики перед тестом
+    Category.all_category = 0
+    Category.all_product = 0
+    product1 = Product("Телефон", "Смартфон", 50000.0, 10)
+    product2 = Product("Ноутбук", "Игровой", 100000.0, 5)
+    category = Category("Электроника", "Техника", [product1, product2])
+    assert str(category) == "Электроника, количество продуктов: 15 шт."
+
+
+def test_category_products_property():
+    Category.all_category = 0
+    Category.all_product = 0
+    product1 = Product("Телефон", "Смартфон", 50000.0, 10)
+    product2 = Product("Ноутбук", "Игровой", 100000.0, 5)
+    category = Category("Электроника", "Техника", [product1, product2])
+    expected_output = (
+        "Телефон, 50000.0 руб. Остаток: 10 шт. "
+        "Ноутбук, 100000.0 руб. Остаток: 5 шт. "
+    )
+    assert category.products_str == expected_output
+
+
+def test_category_add_product():
+    Category.all_category = 0
+    Category.all_product = 0
+    product1 = Product("Телефон", "Смартфон", 50000.0, 10)
+    product2 = Product("Ноутбук", "Игровой", 100000.0, 5)
+    category = Category("Электроника", "Техника", [product1])
+
+    initial_product_count = Category.all_product
+    category.add_product(product2)
+
+    expected_output = (
+        "Телефон, 50000.0 руб. Остаток: 10 шт. "
+        "Ноутбук, 100000.0 руб. Остаток: 5 шт. "
+    )
+    assert category.products_str == expected_output
+    assert Category.all_product == initial_product_count + 1
+
+
+def test_category_counters():
+    # Сбросим счетчики перед тестом
+    Category.all_category = 0
+    Category.all_product = 0
+    initial_category_count = Category.all_category
+    initial_product_count = Category.all_product
+
+    product1 = Product("Телефон", "Смартфон", 50000.0, 10)
+    product2 = Product("Ноутбук", "Игровой", 100000.0, 5)
+    Category(  # Не сохраняем в переменную
+        "Электроника", "Техника", [product1, product2]
+    )
+
+    assert Category.all_category == initial_category_count + 1
+    assert Category.all_product == initial_product_count + 2
