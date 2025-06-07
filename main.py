@@ -1,23 +1,11 @@
-class Product:
-    def __init__(self, name, description, price, quantity):
-        self.name = name
-        self.description = description
-        self.price = price
-        self.quantity = quantity
+from src.models import Category, Product
 
+if __name__ == "__main__":
+    phone = Product("iPhone 15", "Смартфон 128 ГБ", 110_000, 5)
+    mac = Product("MacBook Air M2", "Ноутбук 13″", 135_000, 3)
 
-class Category:
-    category_count = 0
-    product_count = 0
-    _unique_products = set()
+    gadgets = Category("Электроника", "Гаджеты Apple", [phone, mac])
 
-    def __init__(self, name, description, products):
-        self.name = name
-        self.description = description
-        self.products = products
-
-        Category.category_count += 1
-        for product in products:
-            Category._unique_products.add(product)
-        Category.product_count = len(Category._unique_products)
-        
+    print(gadgets)  # Ожидается: Category('Электроника', items=2)
+    print(Category.category_count)  # Ожидается: 1
+    print(Category.product_count)  # Ожидается: 2
