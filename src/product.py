@@ -17,19 +17,18 @@ class Product:
         self.quantity = quantity
 
     def __repr__(self):
-        return f"Product(name={self.name}, price={self.price}, quantity={self.quantity})"
+        return (f"Product(name={self.name}, price={self.price}, "
+                f"quantity={self.quantity})")
 
     def __eq__(self, other):
         """
         Сравнение двух продуктов по их атрибутам.
         """
         if isinstance(other, Product):
-            return (
-                self.name == other.name and
-                self.description == other.description and
-                self.price == other.price and
-                self.quantity == other.quantity
-            )
+            return (self.name == other.name and
+                    self.description == other.description and
+                    self.price == other.price and
+                    self.quantity == other.quantity)
         return False
 
     def __hash__(self):
