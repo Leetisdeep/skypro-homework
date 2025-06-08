@@ -1,13 +1,17 @@
 import pytest
-from src.product import Product
+
 from src.category import Category
+from src.product import Product
 
 
 @pytest.fixture
 def product() -> "Product":
-    return Product("Samsung Galaxy S23 Ultra",
-                   "256GB, Серый цвет, 200MP камера",
-                   180000.0, 5)
+    return Product(
+        "Samsung Galaxy S23 Ultra",
+        "256GB, Серый цвет, 200MP камера",
+        180000.0,
+        5
+    )
 
 
 def test_init(product: Product) -> None:
@@ -29,14 +33,15 @@ def test_new_product(product: Product) -> None:
 
 
 def test_price(product: Product) -> None:
-    # установка корректной цены
     assert product.price == 180000.0
     product.price = 50
     assert product.price == 50
-
-    # попытка установить отрицательную цену — цена не должна измениться
-    product.price = -50
-    assert product.price == 50
+    with pytest.raises(
+        ValueError,
+        match="Цена не должна быть нулевая или отрицательная"
+    ):
+        product.price = -50
+    assert product.price == 50  # Цена должна остаться прежней
 
 
 def test_product_str():
@@ -63,21 +68,21 @@ def test_product_price_setter_positive():
 
 
 def test_product_price_setter_negative_or_zero():
-    """
-    При попытке установить отрицательную или нулевую цену
-    значение свойства price остаётся неизменным.
-    """
     product = Product("Телефон", "Смартфон", 50000.0, 10)
-    product.price = -1000.0
-    assert product.price == 50000.0  # Цена не поменялась
-    product.price = 0
-    assert product.price == 50000.0  # Всё ещё не поменялась
+    with pytest.raises(
+        ValueError,
+        match="Цена не должна быть нулевая или отрицательная"
+    ):
+        product.price = -1000.0
+    assert product.price == 50000.0  # Проверяем, что цена не изменилась
 
 
 def test_product_zero_quantity():
     """Тест создания продукта с нулевым количеством"""
-    with pytest.raises(ValueError,
-                       match="Товар с нулевым количеством не может быть добавлен"):
+    with pytest.raises(
+        ValueError,
+        match="Товар с нулевым количеством не может быть добавлен"
+    ):
         Product("Тест", "Тест", 100, 0)
 
 
