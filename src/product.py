@@ -88,7 +88,7 @@ class Product(BaseProduct, ReprLoggingMixin):
             self._price = new_price
 
     def __add__(self, other) -> float:
-        if not isinstance(other, BaseProduct):
+        if type(self) != type(other):
             raise TypeError(
                 "Можно складывать только объекты класса Product "
                 "или его наследников")
