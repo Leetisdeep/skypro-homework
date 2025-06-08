@@ -1,111 +1,119 @@
-import pytest
-from src.product import Product
-from src.category import Category
+from abc import ABC, abstractmethod
 
 
-@pytest.fixture
-def product() -> "Product":
-    return Product(
-        "Samsung Galaxy S23 Ultra",
-        "256GB, Серый цвет, 200MP камера",
-        180000.0,
-        5
-    )
+class ReprLoggingMixin:
+    """
+    Миксин для логирования создания объектов и представления.
+    Реализует магический метод repr и расширяет init.
+    """
+
+    def __init__(self, *args, **kwargs):
+        print(f"Создание объекта {self.__class__.__name__} с параметрами:")
+        for name, value in kwargs.items():
+            print(f"  {name}: {value}")
+        super().__init__(*args, **kwargs)
+
+    def __repr__(self) -> str:
+        args_str = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"<{self.__class__.__name__}({args_str})>"
 
 
-def test_init(product: Product) -> None:
-    assert product.name == "Samsung Galaxy S23 Ultra"
-    assert product.description == "256GB, Серый цвет, 200MP камера"
-    assert product.price == 180000.0
-    assert product.quantity == 5
+class BaseProduct(ABC):
+    """Абстрактный базовый класс для продуктов"""
+
+    @abstractmethod
+    def __init__(self, name: str, description: str,
+                 price: float, quantity: int):
+        self.name = name
+        self.description = description
+        self._price = price
+        self.quantity = quantity
+        super().__init__()
+
+    @abstractmethod
+    def __str__(self):
+        pass
+
+    @property
+    @abstractmethod
+    def price(self):
+        pass
+
+    @price.setter
+    @abstractmethod
+    def price(self, new_price):
+        pass
+
+    @abstractmethod
+    def add(self, other):
+        pass
 
 
-def test_new_product(product: Product) -> None:
-    new_dict = {
-        "name": "Samsung Galaxy S23 Ultra",
-        "description": "256GB, Серый цвет, 200MP камера",
-        "price": 180000.0,
-        "quantity": 5,
-    }
-    ret = product.new_product(new_dict)
-    assert ret.name == "Samsung Galaxy S23 Ultra"
+class Product(BaseProduct, ReprLoggingMixin):
+    """Класс продукта с наследованием от BaseProduct и миксина"""
+
+    def __init__(self, name: str, description: str,
+                 price: float, quantity: int):
+        if quantity == 0:
+            raise ValueError(
+                "Товар с нулевым количеством не может быть добавлен"
+            )
+        super().__init__(
+            name=name, description=description,
+            price=price, quantity=quantity
+        )
+
+    def __str__(self) -> str:
+        return f"{self.name}, {self._price} руб. Остаток: {self.quantity} шт."
+
+    @property
+    def price(self):
+        return self._price
+
+    @price.setter
+    def price(self, value):
+        if value <= 0:
+            raise ValueError(
+                "Цена не должна быть нулевая или отрицательная"
+            )
+        self._price = value
+
+    def add(self, other) -> float:
+        if not isinstance(other, BaseProduct):
+            raise TypeError(
+                "Можно складывать только объекты класса Product "
+                "или его наследников"
+            )
+        return self._price * self.quantity + \
+            other._price * other.quantity
+
+    @classmethod
+    def new_product(cls, dictionary: dict) -> "Product":
+        return cls(**dictionary)
 
 
-def test_price(product: Product) -> None:
-    assert product.price == 180000.0
-    product.price = 50
-    assert product.price == 50
-    with pytest.raises(ValueError):  # Теперь ожидаем ошибку
-        product.price = -50
-    assert product.price == 50  # Цена не изменилась
+class Smartphone(Product):
+    def __init__(self, name: str, description: str, price: float,
+                 quantity: int, efficiency: float, model: str,
+                 memory: int, color: str):
+        super().__init__(
+            name=name, description=description,
+            price=price, quantity=quantity
+        )
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
 
 
-def test_product_str():
-    product = Product("Телефон", "Смартфон", 50000.0, 10)
-    assert str(product) == "Телефон, 50000.0 руб. Остаток: 10 шт."
-
-
-def test_product_add():
-    product1 = Product("Телефон", "Смартфон", 50000.0, 10)
-    product2 = Product("Ноутбук", "Игровой", 100000.0, 5)
-    assert product1 + product2 == 50000.0 * 10 + 100000.0 * 5
-
-
-def test_product_add_type_error():
-    product = Product("Телефон", "Смартфон", 50000.0, 10)
-    with pytest.raises(TypeError):
-        product + "Не продукт"
-
-
-def test_product_price_setter_positive():
-    product = Product("Телефон", "Смартфон", 50000.0, 10)
-    product.price = 60000.0
-    assert product.price == 60000.0
-
-
-def test_product_price_setter_negative_or_zero():
-    product = Product("Телефон", "Смартфон", 50000.0, 10)
-    with pytest.raises(
-            ValueError,
-            match="Цена не должна быть нулевая или отрицательная"
-    ):
-        product.price = -1000.0
-    assert product.price == 50000.0  # Цена не изменилась
-
-
-def test_product_zero_quantity():
-    """Тест создания продукта с нулевым количеством"""
-    with pytest.raises(
-            ValueError,
-            match="Товар с нулевым количеством не может быть добавлен"
-    ):
-        Product("Тест", "Тест", 100, 0)
-
-
-def test_category_average_price():
-    """Тест расчета средней цены категории"""
-    # Случай с товарами
-    p1 = Product("Товар 1", "Описание", 100, 10)
-    p2 = Product("Товар 2", "Описание", 200, 5)
-    cat = Category("Категория", "Описание", [p1, p2])
-    assert cat.average_price() == 150.0
-
-    # Случай без товаров
-    empty_cat = Category("Пустая", "Описание", [])
-    assert empty_cat.average_price() == 0
-
-    # Случай с нулевой ценой
-    p3 = Product("Товар 3", "Описание", 0, 1)
-    cat_with_zero = Category("С нулем", "Описание", [p3])
-    assert cat_with_zero.average_price() == 0
-
-
-def test_add_product_with_zero_quantity():
-    """Тест добавления продукта с нулевым количеством через new_product"""
-    with pytest.raises(ValueError):
-        Product.new_product({
-            "name": "Тест",
-            "description": "Тест",
-            "price": 100,
-            "quantity": 0
-        })
+class LawnGrass(Product):
+    def __init__(self, name: str, description: str, price: float,
+                 quantity: int, country: str,
+                 germination_period: str, color: str):
+        super().__init__(
+            name=name, description=description,
+            price=price, quantity=quantity
+        )
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
