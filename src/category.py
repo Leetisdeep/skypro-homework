@@ -1,5 +1,4 @@
-from src.Product import Product
-
+from src.product import Product
 
 class Category:
     """Класс категории товаров"""
