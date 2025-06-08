@@ -1,0 +1,2 @@
+[2025-04-29T12:02:05.614841] Start function 'bad_func' with args=(), kwargs={}
+[2025-04-29T12:02:05.614996] Error in function 'bad_func': ValueError. Args were (), kwargs were {}. Exception message: Test error
