@@ -34,7 +34,7 @@ class Category:
         """
         Возвращает строковое представление категории.
         """
-        return f"{self.name}, количество продуктов: {len(self.products)} шт."
+        return f"{self.name}. Остаток: {len(self.products)} шт."
 
     def __repr__(self):
         return f"Category(name={self.name}, products={self.products})"
