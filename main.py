@@ -1,7 +1,7 @@
-from src.Category import Category
-from src.Product import Product
-from src.Product import Smartphone
-from src.Product import LawnGrass
+from src.category import Category
+from src.product import Product
+from src.product import Smartphone
+from src.product import LawnGrass
 
 if __name__ == "__main__":
     product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
