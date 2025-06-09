@@ -1,0 +1,22 @@
+{
+  "categories": [
+    {
+      "name": "Electronics",
+      "description": "All electronic devices",
+      "products": [
+        {
+          "name": "Laptop",
+          "description": "A powerful laptop",
+          "price": 1000,
+          "quantity": 5
+        },
+        {
+          "name": "Smartphone",
+          "description": "A modern smartphone",
+          "price": 500,
+          "quantity": 10
+        }
+      ]
+    }
+  ]
+}
