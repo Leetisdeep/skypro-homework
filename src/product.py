@@ -99,32 +99,3 @@ class Product(BaseProduct, ReprLoggingMixin):
         return cls(**dictionary)
 
 
-class Smartphone(Product):
-    def __init__(self, name: str, description: str, price: float,
-                 quantity: int, efficiency: float, model: str,
-                 memory: int, color: str):
-        super().__init__(
-            name=name,
-            description=description,
-            price=price,
-            quantity=quantity
-        )
-        self.efficiency = efficiency
-        self.model = model
-        self.memory = memory
-        self.color = color
-
-
-class LawnGrass(Product):
-    def __init__(self, name: str, description: str, price: float,
-                 quantity: int, country: str, germination_period: str,
-                 color: str):
-        super().__init__(
-            name=name,
-            description=description,
-            price=price,
-            quantity=quantity
-        )
-        self.country = country
-        self.germination_period = germination_period
-        self.color = color
