@@ -53,7 +53,10 @@ class Product:
         return False
 
     def __add__(self, other):
-        """Сложение продуктов с возвратом общей стоимости."""
+        """
+        Сложение продуктов с возвратом общей стоимости.
+        Возвращает сумму: (цена self × количество self) + (цена other × количество other)
+        """
         if isinstance(other, Product):
             return self.price * self.quantity + other.price * other.quantity
         raise TypeError("Можно складывать только объекты Product")
