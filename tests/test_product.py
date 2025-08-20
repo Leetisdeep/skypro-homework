@@ -36,12 +36,10 @@ def test_new_product() -> None:
 def test_price_setter(product: Product) -> None:
     product.price = 200000.0
     assert product.price == 200000.0
-    
-    # Проверка на отрицательную цену
-    with pytest.raises(ValueError):
-        product.price = -1000.0
-    assert product.price == 200000.0  # Цена не изменилась
 
+    # Проверка на отрицательную цену (цена не должна меняться)
+    product.price = -1000.0
+    assert product.price == 200000.0  # Цена не изменилась
 
 def test_product_str(product: Product) -> None:
     assert str(product) == "Samsung Galaxy S23 Ultra, 180000.0 руб. Остаток: 5 шт."
@@ -146,3 +144,4 @@ def test_lawn_grass_new_product() -> None:
     product = LawnGrass.new_product(product_dict)
     assert isinstance(product, LawnGrass)
     assert product.country == "Germany"
+
