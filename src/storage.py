@@ -34,10 +34,10 @@ class JSONStorage(Storage):
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
-        self.filename = os.path.join(data_dir, filename)
+        self._filename = os.path.join(data_dir, filename)
 
-        if not os.path.exists(self.filename):
-            with open(self.filename, 'w', encoding='utf-8') as file:
+        if not os.path.exists(self._filename):
+            with open(self._filename, 'w', encoding='utf-8') as file:
                 json.dump([], file)
 
     def add_vacancy(self, vacancy):
@@ -46,24 +46,25 @@ class JSONStorage(Storage):
             return
 
         try:
-            with open(self.filename, 'r+', encoding='utf-8') as file:
+            with open(self._filename, 'r+', encoding='utf-8') as file:
                 vacancies = json.load(file)
 
                 # Проверяем, есть ли такая вакансия уже в файле
-                if any(v.get("name") == vacancy["name"] and v.get("company") == vacancy["company"] and v.get("city") ==
-                       vacancy["city"] for v in vacancies):
+                if any(v.get("name") == vacancy["name"] and 
+                       v.get("company") == vacancy["company"] and 
+                       v.get("city") == vacancy["city"] for v in vacancies):
                     return
 
                 vacancies.append(vacancy)
                 file.seek(0)
                 json.dump(vacancies, file, ensure_ascii=False, indent=4)
         except (json.JSONDecodeError, FileNotFoundError):
-            with open(self.filename, 'w', encoding='utf-8') as file:
+            with open(self._filename, 'w', encoding='utf-8') as file:
                 json.dump([vacancy], file, ensure_ascii=False, indent=4)
 
     def get_vacancies(self, criteria):
         """Возвращает список вакансий, соответствующих критериям"""
-        with open(self.filename, 'r', encoding='utf-8') as file:
+        with open(self._filename, 'r', encoding='utf-8') as file:
             try:
                 vacancies = json.load(file)
             except json.JSONDecodeError:
@@ -86,7 +87,7 @@ class JSONStorage(Storage):
 
     def delete_vacancy(self, vacancy_id):
         """Удаляет вакансию из JSON-файла"""
-        with open(self.filename, 'r', encoding='utf-8') as file:
+        with open(self._filename, 'r', encoding='utf-8') as file:
             try:
                 vacancies = json.load(file)
             except json.JSONDecodeError:
@@ -94,7 +95,7 @@ class JSONStorage(Storage):
 
         vacancies = [vacancy for vacancy in vacancies if vacancy.get('id') != vacancy_id]
 
-        with open(self.filename, 'w', encoding='utf-8') as file:
+        with open(self._filename, 'w', encoding='utf-8') as file:
             json.dump(vacancies, file, ensure_ascii=False, indent=4)
 
     def __enter__(self):
